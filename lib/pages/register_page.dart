@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -8,6 +11,40 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+
+  Future<void> _registerUser() async {
+  final String apiUrl = "http://192.168.1.130:5000/api/users"; // ganti sesuai IP backendmu
+
+  try {
+    final response = await http.post(
+      Uri.parse(apiUrl),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "email": _emailController.text,
+        "password": _passwordController.text,
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      final data = jsonDecode(response.body);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(data['message'] ?? 'Registrasi berhasil')),
+      );
+      Navigator.pushNamed(context, '/login'); // arahkan ke login page
+    } else {
+      final error = jsonDecode(response.body);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error['error'] ?? 'Gagal register')),
+      );
+    }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Terjadi error: $e')),
+    );
+  }
+}
+
+
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -143,26 +180,50 @@ class _RegisterPageState extends State<RegisterPage> {
     return ElevatedButton(
       onPressed: () {
         if (_formKey.currentState!.validate()) {
-          Navigator.pushNamed(context, '/');
+         Widget _buildRegisterButton() {
+          return ElevatedButton(
+            onPressed: () {
+              if (_formKey.currentState!.validate()) {
+                _registerUser(); // panggil API register
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color(0xFF4A2E14),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+            ),
+            child: const Text(
+              'Register',
+              style: TextStyle(
+                fontFamily: 'Merienda',
+                fontSize: 18,
+              ),
+            ),
+          );
         }
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Color(0xFF4A2E14),
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 14),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-        ),
-      ),
-      child: const Text(
-        'Register',
-        style: TextStyle(
-          fontFamily: 'Merienda',
-          fontSize: 18,
-        ),
-      ),
-    );
-  }
+
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFF4A2E14),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+              ),
+              child: const Text(
+                'Register',
+                style: TextStyle(
+                  fontFamily: 'Merienda',
+                  fontSize: 18,
+                ),
+              ),
+            );
+          }
 
   Widget _buildLoginLink() {
     return TextButton(
